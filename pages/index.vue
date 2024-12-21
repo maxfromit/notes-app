@@ -2,65 +2,72 @@
 import { ref } from "vue"
 import { useRouter } from "vue-router"
 import NoteList from "@/components/NoteList.vue"
+import l from "lodash"
 
-type Note = {
+export type Note = {
   id: number
   title: string
   todos: { id: number; text: string; done: boolean }[]
 }
 
-const notes = ref<Note[]>([
+const initialNotes = [
   {
     id: 1,
-    title: "First Note",
+    title: "Первая заметка",
     todos: [
-      { id: 1, text: "First todo", done: false },
-      { id: 2, text: "Second todo", done: true },
+      { id: 1, text: "Первое дело", done: false },
+      { id: 2, text: "Второе дело", done: true },
     ],
   },
   {
     id: 2,
-    title: "Second Note",
+    title: "Вторая заметка",
     todos: [
-      { id: 1, text: "Another todo", done: false },
-      { id: 2, text: "Yet another todo", done: false },
+      { id: 1, text: "Еще одно дело", done: false },
+      { id: 2, text: "Еще одно дело", done: false },
     ],
   },
-])
+  {
+    id: 3,
+    title: "Третья заметка",
+    todos: [
+      { id: 1, text: "Дело 1", done: true },
+      { id: 2, text: "Дело 2", done: false },
+      { id: 3, text: "Дело 3", done: true },
+      { id: 4, text: "Дело 4", done: false },
+    ],
+  },
+]
+
+const notes = ref<Note[]>(initialNotes)
+
+const sortedNotes = computed(() =>
+  notes.value.map((note) => ({
+    ...note,
+    todos: l.orderBy(note.todos, ["done"], ["desc"]),
+  }))
+)
 
 const router = useRouter()
 
 function createNote() {
-  router.push("/edit")
+  router.push("/edit?id=new")
 }
 
-function editNote(noteId) {
+function editNote(noteId: number) {
   router.push(`/edit?id=${noteId}`)
 }
 
-function deleteNote(noteId) {
-  if (confirm("Are you sure you want to delete this note?")) {
-    notes.value = notes.value.filter((note) => note.id !== noteId)
-  }
+function deleteNote(noteId: number) {
+  notes.value = l.reject(notes.value, { id: noteId })
 }
 </script>
 
 <template>
-  <div
-    class="-flex -flex-col -grow -justify-center -content-center grid grid-cols-12 h-dvh"
-  >
-    <UCard
-      class="-grow md:col-start-3 lg:col-start-4 col-span-12 md:col-span-8 lg:col-span-6 grid grid-rows-[auto_1fr_auto]"
-    >
-      <template #header>
-        <div class="text-center text-2xl">Ваши заметки</div>
-      </template>
-
-      <NoteList :notes="notes" @edit="editNote" @delete="deleteNote" />
-
-      <template #footer>
-        <div class="text-end">2024</div>
-      </template>
-    </UCard>
-  </div>
+  <NoteList
+    :notes="sortedNotes"
+    @edit="editNote"
+    @delete="deleteNote"
+    @create="createNote"
+  />
 </template>
