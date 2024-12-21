@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue"
 import type { Note } from "../pages/index.vue"
 import l from "lodash"
 
@@ -9,6 +8,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: "edit" | "delete", noteId: number): void
+  (e: "create"): void
 }>()
 
 const showModal = ref(false)
@@ -33,7 +33,7 @@ function deleteNote() {
   <div class="grid grid-rows-[auto_1fr] gap-10">
     <div class="grid grid-cols-[1fr_auto]">
       <div class="text-xl">Заметки</div>
-      <UButton icon="i-lucide-plus" color="primary" />
+      <UButton icon="i-lucide-plus" color="primary" @click="emit('create')" />
     </div>
   </div>
   <div v-if="!l.isEmpty(props.notes)" key="notes-list" class="grid gap-5">
@@ -43,13 +43,13 @@ function deleteNote() {
         <div class="grid grid-cols-2 gap-1">
           <UButton
             icon="i-lucide-pencil"
-            variant="outline"
+            variant="ghost"
             color="neutral"
             @click="emit('edit', note.id)"
           />
           <UButton
             icon="i-lucide-trash"
-            variant="outline"
+            variant="ghost"
             color="neutral"
             @click="confirmDelete(note.id)"
           />
