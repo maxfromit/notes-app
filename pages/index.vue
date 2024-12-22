@@ -13,7 +13,8 @@ export type Note = {
 const initialNotes = [
   {
     id: 1,
-    title: "Первая заметка",
+    title:
+      "Первая заметка с очень длинным заголовком для тестирования отображения и функциональности",
     todos: [
       { id: 1, text: "Первое дело", done: false },
       { id: 2, text: "Второе дело", done: true },
