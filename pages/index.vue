@@ -3,6 +3,7 @@ import { ref } from "vue"
 import { useRouter } from "vue-router"
 import NoteList from "@/components/NoteList.vue"
 import l from "lodash"
+import { useNotes } from "@/composables/useNotes"
 
 export type Note = {
   id: number
@@ -10,37 +11,11 @@ export type Note = {
   todos: { id: number; text: string; done: boolean }[]
 }
 
-const initialNotes = [
-  {
-    id: 1,
-    title:
-      "Первая заметка с очень длинным заголовком для тестирования отображения и функциональности",
-    todos: [
-      { id: 1, text: "Первое дело", done: false },
-      { id: 2, text: "Второе дело", done: true },
-    ],
-  },
-  {
-    id: 2,
-    title: "Вторая заметка",
-    todos: [
-      { id: 1, text: "Еще одно дело", done: false },
-      { id: 2, text: "Еще одно дело", done: false },
-    ],
-  },
-  {
-    id: 3,
-    title: "Третья заметка",
-    todos: [
-      { id: 1, text: "Дело 1", done: true },
-      { id: 2, text: "Дело 2", done: false },
-      { id: 3, text: "Дело 3", done: true },
-      { id: 4, text: "Дело 4", done: false },
-    ],
-  },
-]
+const { notes, loadNotes, deleteNoteById } = useNotes()
 
-const notes = ref<Note[]>(initialNotes)
+onMounted(() => {
+  loadNotes()
+})
 
 const sortedNotes = computed(() =>
   notes.value.map((note) => ({
@@ -60,11 +35,12 @@ function editNote(noteId: number) {
 }
 
 function deleteNote(noteId: number) {
-  notes.value = l.reject(notes.value, { id: noteId })
+  deleteNoteById(noteId)
 }
 </script>
 
 <template>
+  {{ notes }}
   <NoteList
     :notes="sortedNotes"
     @edit="editNote"
