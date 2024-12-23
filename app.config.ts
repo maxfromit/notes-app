@@ -72,7 +72,7 @@ export default defineAppConfig({
       slots: {
         root: "bg-[var(--ui-bg)] ring ring-[var(--ui-border)] divide-y divide-[var(--ui-border)] rounded-[calc(var(--ui-radius)*2)] shadow-sm",
         header: "p-4 sm:px-6",
-        body: "p-4 sm:py-2 sm:px-3",
+        body: "py-2 px-3 sm:py-2 sm:px-3",
         footer: "p-4 sm:px-6",
       },
     },
