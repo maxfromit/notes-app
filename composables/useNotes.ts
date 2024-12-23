@@ -1,6 +1,5 @@
 import type { Note } from "../pages/index.vue"
 import l from "lodash"
-import { getNextId } from "@/utils/getNextId"
 
 export const useNotes = () => {
   const notes = ref<Note[]>([])
@@ -20,10 +19,6 @@ export const useNotes = () => {
   }
 
   const addNote = (newNote: Note) => {
-    console.log("newNote", newNote)
-    newNote.id = getNextId(l.map(notes.value, (note) => note.id))
-    console.log("notes. ", notes.value)
-
     notes.value.push(newNote)
     saveNotes(notes.value)
   }
