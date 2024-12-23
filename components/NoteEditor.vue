@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from "vue"
 import type { Note } from "../pages/index.vue"
-import type { FormError } from "#ui/types"
 import l from "lodash"
 import ConfirmationDialog from "./ConfirmationDialog.vue"
 import { getNextId } from "@/utils/getNextId"
@@ -45,6 +44,7 @@ function removeTodo(todoId: number) {
 
 function addNewToDo() {
   if (!noteClone.value) return
+
   if (newToDo.value) {
     noteClone.value.todos.push({
       id: getNextId(l.map(noteClone.value.todos, (todo) => todo.id)),
@@ -82,63 +82,104 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
 </script>
 
 <template>
-  <div class="grid grid-rows-[auto_1fr_auto] gap-5 h-full">
-    <div class="text-xl">Редактор заметки</div>
+  <div class="grid grid-rows-[auto_1fr_auto] gap-4 h-full">
+    <div class="text-xl text-center">Редактор заметки</div>
 
     <div>
       <div v-if="noteClone" class="grid gap-5">
         <div class="grid grid-rows-auto">
           <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-            <UFormField name="title">
-              <UInput
-                v-model="noteClone.title"
-                placeholder="Заголовок"
-                type="title"
-                size="xl"
-                variant="ghost"
-              />
-            </UFormField>
+            <UInput
+              v-model="noteClone.title"
+              placeholder="Заголовок"
+              type="title"
+              size="xl"
+              variant="ghost"
+            />
             <div>
-              <UButton
-                icon="i-lucide-save"
-                variant="ghost"
-                color="neutral"
-                :disabled="!isStateChanged || !noteClone.title.trim()"
-                @click="saveNote"
-              />
-              <UButton
-                icon="i-lucide-rotate-ccw"
-                variant="ghost"
-                color="neutral"
-                :disabled="!isStateChanged"
-                @click="confirmCancel"
-              />
-              <UButton
-                icon="i-lucide-trash"
-                variant="ghost"
-                color="neutral"
-                :disabled="!noteClone.id"
-                @click="confirmDelete"
-              />
+              <UTooltip
+                :text="
+                  !isStateChanged
+                    ? 'Нельзя сохранить: нет изменений'
+                    : 'Сохранить'
+                "
+              >
+                <UButton
+                  icon="i-lucide-save"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="!isStateChanged || !noteClone.title.trim()"
+                  @click="saveNote"
+                />
+              </UTooltip>
+
+              <UTooltip
+                :text="
+                  !isStateChanged
+                    ? 'Нельзя отменить: нет изменений'
+                    : 'Отменить и вернуться на главную'
+                "
+              >
+                <UButton
+                  icon="i-lucide-rotate-ccw"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="!isStateChanged"
+                  @click="confirmCancel"
+                />
+              </UTooltip>
+
+              <UTooltip
+                :text="
+                  !noteClone.id
+                    ? 'Нельзя удалить: заметка не создана'
+                    : 'Удалить заметку и вернуться на главную'
+                "
+              >
+                <UButton
+                  icon="i-lucide-trash"
+                  variant="ghost"
+                  color="neutral"
+                  :disabled="!noteClone.id"
+                  @click="confirmDelete"
+                />
+              </UTooltip>
             </div>
           </div>
           <div class="flex flex-row items-center gap-1 pl-3">
-            <UButton
-              icon="i-lucide-undo"
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              :disabled="!isStateChanged"
-              @click="resetToInitialState"
-            />
-            <UButton
-              icon="i-lucide-redo"
-              variant="ghost"
-              color="neutral"
-              size="xs"
-              :disabled="!draftState"
-              @click="returnToNewState"
-            />
+            <UTooltip
+              :text="
+                !isStateChanged
+                  ? 'Нельзя отменить изменения: изменений нет'
+                  : 'Отменить все изменения и вернуться к изначальному состоянию'
+              "
+            >
+              <UButton
+                icon="i-lucide-undo"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                :disabled="!isStateChanged"
+                @click="resetToInitialState"
+              />
+            </UTooltip>
+
+            <UTooltip
+              :text="
+                !draftState
+                  ? 'Нельзя вернуть изменения: заметка в изначальном состоянии'
+                  : 'Вернуть все изменения'
+              "
+            >
+              <UButton
+                icon="i-lucide-redo"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                :disabled="!draftState"
+                @click="returnToNewState"
+              />
+            </UTooltip>
           </div>
         </div>
 
@@ -154,28 +195,24 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
           >
             <UCard>
               <div class="grid grid-cols-[auto_1fr] items-center gap-2">
-                <UFormField name="todoDone">
-                  <UCheckbox v-model="todo.done" />
-                </UFormField>
-                <UFormField name="todoText">
-                  <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
-                    <UInput
-                      v-model="todo.text"
-                      placeholder="To-do"
-                      type="text"
-                      size="sm"
-                      variant="ghost"
-                    />
+                <UCheckbox v-model="todo.done" />
+                <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
+                  <UInput
+                    v-model="todo.text"
+                    placeholder="To-do"
+                    type="text"
+                    size="sm"
+                    variant="ghost"
+                  />
 
-                    <UButton
-                      icon="i-lucide-circle-x"
-                      variant="ghost"
-                      color="neutral"
-                      size="sm"
-                      @click="removeTodo(todo.id)"
-                    />
-                  </div>
-                </UFormField>
+                  <UButton
+                    icon="i-lucide-circle-x"
+                    variant="ghost"
+                    color="neutral"
+                    size="sm"
+                    @click="removeTodo(todo.id)"
+                  />
+                </div>
               </div>
             </UCard>
           </div>
@@ -194,28 +231,24 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
           >
             <UCard>
               <div class="grid grid-cols-[auto_1fr] items-center gap-2">
-                <UFormField name="todoDone">
-                  <UCheckbox v-model="todo.done" />
-                </UFormField>
-                <UFormField name="todoText">
-                  <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
-                    <UInput
-                      v-model="todo.text"
-                      placeholder="To-do"
-                      type="text"
-                      size="sm"
-                      variant="ghost"
-                    />
+                <UCheckbox v-model="todo.done" />
+                <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
+                  <UInput
+                    v-model="todo.text"
+                    placeholder="To-do"
+                    type="text"
+                    size="sm"
+                    variant="ghost"
+                  />
 
-                    <UButton
-                      icon="i-lucide-circle-x"
-                      variant="ghost"
-                      color="neutral"
-                      size="sm"
-                      @click="removeTodo(todo.id)"
-                    />
-                  </div>
-                </UFormField>
+                  <UButton
+                    icon="i-lucide-circle-x"
+                    variant="ghost"
+                    color="neutral"
+                    size="sm"
+                    @click="removeTodo(todo.id)"
+                  />
+                </div>
               </div>
             </UCard>
           </div>
@@ -258,11 +291,3 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
     />
   </div>
 </template>
-
-<style scoped>
-.input {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 0.25rem;
-}
-</style>

@@ -30,10 +30,15 @@ function deleteNote() {
 </script>
 
 <template>
-  <div class="grid grid-rows-[auto_1fr] gap-10">
-    <div class="grid grid-cols-[1fr_auto]">
+  <div class="grid grid-rows-[auto_1fr] gap-4">
+    <div class="flex flex-row gap-2 justify-center">
       <div class="text-xl">Заметки</div>
-      <UButton icon="i-lucide-plus" color="primary" @click="emit('create')" />
+      <UButton
+        icon="i-lucide-plus"
+        variant="ghost"
+        color="primary"
+        @click="emit('create')"
+      />
     </div>
   </div>
   <div v-if="!l.isEmpty(props.notes)" key="notes-list" class="grid gap-5">
@@ -42,18 +47,23 @@ function deleteNote() {
         <div class="grid grid-cols-[1fr_auto]">
           <div>{{ note.title }}</div>
           <div class="grid grid-cols-2 gap-1">
-            <UButton
-              icon="i-lucide-pencil"
-              variant="ghost"
-              color="neutral"
-              @click="emit('edit', note.id)"
-            />
-            <UButton
-              icon="i-lucide-trash"
-              variant="ghost"
-              color="neutral"
-              @click="confirmDelete(note.id)"
-            />
+            <UTooltip text="Редактировать заметку">
+              <UButton
+                icon="i-lucide-pencil"
+                variant="ghost"
+                color="neutral"
+                @click="emit('edit', note.id)"
+              />
+            </UTooltip>
+
+            <UTooltip text="Удалить заметку">
+              <UButton
+                icon="i-lucide-trash"
+                variant="ghost"
+                color="neutral"
+                @click="confirmDelete(note.id)"
+              />
+            </UTooltip>
           </div>
         </div>
         <div class="text-sm">
@@ -73,7 +83,7 @@ function deleteNote() {
   </div>
 
   <div v-else key="notes-empty" class="text-center">
-    Заметок нет, нажмите +, чтоб создать новую
+    Заметок нет, нажмите +, чтобы создать новую
   </div>
 
   <ConfirmationDialog

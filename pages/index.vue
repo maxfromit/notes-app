@@ -15,8 +15,8 @@ const { notes, loadNotes, deleteNoteById } = useNotes()
 
 const loading = ref(true)
 
-onMounted(async () => {
-  await loadNotes()
+onMounted(() => {
+  loadNotes()
   loading.value = false
 })
 

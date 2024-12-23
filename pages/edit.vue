@@ -14,8 +14,8 @@ const isNewNote = computed(() => route.query.id === "new")
 const initialNote = ref<Note | null>(null)
 const loading = ref(true)
 
-onMounted(async () => {
-  await loadNotes()
+onMounted(() => {
+  loadNotes()
   loading.value = false
 })
 
