@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useRouter, useRoute } from "vue-router"
+import dayjs from "dayjs"
+import "dayjs/locale/ru"
 
 const router = useRouter()
 const route = useRoute()
@@ -7,12 +9,15 @@ const route = useRoute()
 function goBack() {
   router.back()
 }
+
+dayjs.locale("ru")
+const currentDate = dayjs().format("D MMMM YYYY")
 </script>
 
 <template>
   <div class="grid grid-cols-12 h-dvh">
     <UCard
-      class="sm:col-start-3 md:col-start-4 lg:col-start-5 col-span-12 sm:col-span-8 md:col-span-6 lg:col-span-4 grid grid-rows-[auto_1fr_auto]"
+      class="sm:col-start-3 md:col-start-4 lg:col-start-5 col-span-12 sm:col-span-8 md:col-span-6 lg:col-span-4 grid grid-rows-[auto_1fr_auto] gap-1"
     >
       <template #header>
         <div class="grid grid-cols-[40px_1fr_40px] items-center content-center">
@@ -30,7 +35,7 @@ function goBack() {
       <slot />
 
       <template #footer>
-        <div class="text-end">2024</div>
+        <div class="text-end">{{ currentDate }}</div>
       </template>
     </UCard>
   </div>
