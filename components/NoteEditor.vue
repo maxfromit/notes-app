@@ -1,54 +1,39 @@
 <script setup lang="ts">
-import { onMounted } from "vue"
+import { ref, computed, watchEffect } from "vue"
 import type { Note } from "../pages/index.vue"
+import type { FormError } from "#ui/types"
 import l from "lodash"
 import ConfirmationDialog from "./ConfirmationDialog.vue"
-import { useNotes } from "@/composables/useNotes"
 import { getNextId } from "@/utils/getNextId"
-import { showSuccessToast, showErrorToast } from "@/utils/toasts"
 
 const props = defineProps<{
-  noteId: string
+  note: Note | null
 }>()
 
 const emit = defineEmits<{
   (e: "delete" | "cancel"): void
+  (e: "save", note: Note): void
 }>()
 
-const toast = useToast()
-
-const isNewNote = computed(() => props.noteId === "new")
-
-const initialNote = ref<Note | null>(null)
-
-const { loadNotes, addNote, getNoteById, updateNote, deleteNoteById } =
-  useNotes()
-
-loadNotes()
-
-watchEffect(() => {
-  if (isNewNote.value) {
-    return (initialNote.value = {
-      ...({} as Note),
-      todos: [],
-    })
-  } else {
-    initialNote.value = getNoteById(l.toNumber(props.noteId))
-  }
-})
-
-const noteClone = ref(l.cloneDeep(initialNote.value))
-
+const noteClone = ref(l.cloneDeep(props.note))
 const draftState = ref<Note | null>(null)
-
 const newToDo = ref("")
 
 const showModalToDelete = ref(false)
 const showModalToCancel = ref(false)
 
+watchEffect(() => {
+  noteClone.value = l.cloneDeep(props.note)
+})
+
 function resetToInitialState() {
   draftState.value = l.cloneDeep(noteClone.value)
-  noteClone.value = l.cloneDeep(initialNote.value)
+  noteClone.value = l.cloneDeep(props.note)
+}
+
+function returnToNewState() {
+  noteClone.value = l.cloneDeep(draftState.value)
+  draftState.value = null
 }
 
 function removeTodo(todoId: number) {
@@ -72,13 +57,7 @@ function addNewToDo() {
 
 function saveNote() {
   if (!noteClone.value) return
-  if (isNewNote.value) {
-    addNote(noteClone.value)
-    showSuccessToast({ title: "Заметка создана" })
-  } else {
-    updateNote(noteClone.value)
-    showSuccessToast({ title: "Заметка сохранена" })
-  }
+  emit("save", noteClone.value)
 }
 
 function confirmDelete() {
@@ -90,10 +69,7 @@ function confirmCancel() {
 }
 
 function deleteNote() {
-  if (!noteClone.value || noteClone.value.id)
-    return showErrorToast({ title: "Ошибка удаления заметки" })
-  deleteNoteById(noteClone.value.id)
-  showSuccessToast({ title: "Заметка удалена" })
+  emit("delete")
   showModalToDelete.value = false
 }
 
@@ -102,9 +78,7 @@ function cancelEditNote() {
   showModalToCancel.value = false
 }
 
-const isStateChanged = computed(
-  () => !l.isEqual(noteClone.value, initialNote.value)
-)
+const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
 </script>
 
 <template>
@@ -112,146 +86,141 @@ const isStateChanged = computed(
     <div class="text-xl">Редактор заметки</div>
 
     <div>
-      {{ noteClone }}
-      <UForm v-if="noteClone" :model="noteClone">
-        <div class="grid gap-5">
-          <div class="grid grid-rows-auto">
-            <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-              <UFormField name="title">
-                <UInput
-                  v-model="noteClone.title"
-                  placeholder="Заголовок"
-                  type="title"
-                  size="xl"
-                  variant="ghost"
-                />
-              </UFormField>
-              <div>
-                <UButton
-                  icon="i-lucide-save"
-                  variant="ghost"
-                  color="neutral"
-                  @click="saveNote"
-                />
-                <UButton
-                  icon="i-lucide-rotate-ccw"
-                  variant="ghost"
-                  color="neutral"
-                  :disabled="!isStateChanged"
-                  @click="confirmCancel"
-                />
-                <UButton
-                  icon="i-lucide-trash"
-                  variant="ghost"
-                  color="neutral"
-                  @click="confirmDelete"
-                />
-              </div>
-            </div>
-            <div class="flex flex-row items-center gap-1 pl-3">
+      <div v-if="noteClone" class="grid gap-5">
+        <div class="grid grid-rows-auto">
+          <div class="grid grid-cols-[1fr_auto] items-center gap-2">
+            <UFormField name="title">
+              <UInput
+                v-model="noteClone.title"
+                placeholder="Заголовок"
+                type="title"
+                size="xl"
+                variant="ghost"
+              />
+            </UFormField>
+            <div>
               <UButton
-                icon="i-lucide-undo"
+                icon="i-lucide-save"
                 variant="ghost"
                 color="neutral"
-                size="xs"
+                :disabled="!isStateChanged || !noteClone.title.trim()"
+                @click="saveNote"
+              />
+              <UButton
+                icon="i-lucide-rotate-ccw"
+                variant="ghost"
+                color="neutral"
                 :disabled="!isStateChanged"
-                @click="resetToInitialState()"
+                @click="confirmCancel"
               />
               <UButton
-                icon="i-lucide-redo"
+                icon="i-lucide-trash"
                 variant="ghost"
                 color="neutral"
-                size="xs"
-                :disabled="!draftState"
-                @click="noteClone = l.cloneDeep(draftState)"
+                :disabled="!noteClone.id"
+                @click="confirmDelete"
               />
             </div>
           </div>
-
-          <div
-            v-if="
-              !l
-                .chain(noteClone.todos)
-                .filter({ done: false })
-                .isEmpty()
-                .value()
-            "
-            class="grid gap-2"
-          >
-            <div
-              v-for="todo in l.filter(noteClone.todos, { done: false })"
-              :key="todo.id"
-            >
-              <UCard>
-                <div class="grid grid-cols-[auto_1fr] items-center gap-2">
-                  <UFormField name="todoDone">
-                    <UCheckbox v-model="todo.done" />
-                  </UFormField>
-                  <UFormField name="todoText">
-                    <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
-                      <UInput
-                        v-model="todo.text"
-                        placeholder="To-do"
-                        type="text"
-                        size="sm"
-                        variant="ghost"
-                      />
-
-                      <UButton
-                        icon="i-lucide-circle-x"
-                        variant="ghost"
-                        color="neutral"
-                        size="sm"
-                        @click="removeTodo(todo.id)"
-                      />
-                    </div>
-                  </UFormField>
-                </div>
-              </UCard>
-            </div>
-          </div>
-
-          <div
-            v-if="
-              !l.chain(noteClone.todos).filter({ done: true }).isEmpty().value()
-            "
-            class="grid gap-2"
-          >
-            <div class="text-sm">Выполнено:</div>
-            <div
-              v-for="todo in l.filter(noteClone.todos, { done: true })"
-              :key="todo.id"
-            >
-              <UCard>
-                <div class="grid grid-cols-[auto_1fr] items-center gap-2">
-                  <UFormField name="todoDone">
-                    <UCheckbox v-model="todo.done" />
-                  </UFormField>
-                  <UFormField name="todoText">
-                    <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
-                      <UInput
-                        v-model="todo.text"
-                        placeholder="To-do"
-                        type="text"
-                        size="sm"
-                        variant="ghost"
-                      />
-
-                      <UButton
-                        icon="i-lucide-circle-x"
-                        variant="ghost"
-                        color="neutral"
-                        size="sm"
-                        @click="removeTodo(todo.id)"
-                      />
-                    </div>
-                  </UFormField>
-                </div>
-              </UCard>
-            </div>
+          <div class="flex flex-row items-center gap-1 pl-3">
+            <UButton
+              icon="i-lucide-undo"
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              :disabled="!isStateChanged"
+              @click="resetToInitialState"
+            />
+            <UButton
+              icon="i-lucide-redo"
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              :disabled="!draftState"
+              @click="returnToNewState"
+            />
           </div>
         </div>
-      </UForm>
+
+        <div
+          v-if="
+            !l.chain(noteClone.todos).filter({ done: false }).isEmpty().value()
+          "
+          class="grid gap-2"
+        >
+          <div
+            v-for="todo in l.filter(noteClone.todos, { done: false })"
+            :key="todo.id"
+          >
+            <UCard>
+              <div class="grid grid-cols-[auto_1fr] items-center gap-2">
+                <UFormField name="todoDone">
+                  <UCheckbox v-model="todo.done" />
+                </UFormField>
+                <UFormField name="todoText">
+                  <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
+                    <UInput
+                      v-model="todo.text"
+                      placeholder="To-do"
+                      type="text"
+                      size="sm"
+                      variant="ghost"
+                    />
+
+                    <UButton
+                      icon="i-lucide-circle-x"
+                      variant="ghost"
+                      color="neutral"
+                      size="sm"
+                      @click="removeTodo(todo.id)"
+                    />
+                  </div>
+                </UFormField>
+              </div>
+            </UCard>
+          </div>
+        </div>
+
+        <div
+          v-if="
+            !l.chain(noteClone.todos).filter({ done: true }).isEmpty().value()
+          "
+          class="grid gap-2"
+        >
+          <div class="text-sm">Выполнено:</div>
+          <div
+            v-for="todo in l.filter(noteClone.todos, { done: true })"
+            :key="todo.id"
+          >
+            <UCard>
+              <div class="grid grid-cols-[auto_1fr] items-center gap-2">
+                <UFormField name="todoDone">
+                  <UCheckbox v-model="todo.done" />
+                </UFormField>
+                <UFormField name="todoText">
+                  <div class="grid grid-cols-[1fr_auto] gap-2 items-center">
+                    <UInput
+                      v-model="todo.text"
+                      placeholder="To-do"
+                      type="text"
+                      size="sm"
+                      variant="ghost"
+                    />
+
+                    <UButton
+                      icon="i-lucide-circle-x"
+                      variant="ghost"
+                      color="neutral"
+                      size="sm"
+                      @click="removeTodo(todo.id)"
+                    />
+                  </div>
+                </UFormField>
+              </div>
+            </UCard>
+          </div>
+        </div>
+      </div>
     </div>
     <UCard>
       <div class="grid grid-cols-[auto_1fr] gap-2 items-center">
@@ -260,7 +229,7 @@ const isStateChanged = computed(
           variant="ghost"
           color="neutral"
           size="sm"
-          :disabled="l.isEmpty(newToDo)"
+          :disabled="l.isEmpty(newToDo.trim())"
           @click="addNewToDo"
         />
         <UInput
