@@ -60,7 +60,7 @@ function deleteNote() {
           <div
             v-for="todo in note.todos.slice(0, toDosToShow)"
             :key="todo.id"
-            :class="{ 'line-through': !todo.done }"
+            :class="{ 'line-through': todo.done }"
           >
             {{ todo.text }}
           </div>
