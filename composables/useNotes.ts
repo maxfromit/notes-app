@@ -2,42 +2,44 @@ import type { Note } from "../pages/index.vue"
 import l from "lodash"
 
 export const useNotes = () => {
-  const notes = ref<Note[]>([])
+  const notesInMemory = ref<Note[]>([])
 
   const loadNotes = () => {
     const storedNotes = localStorage.getItem("notes")
-    notes.value = storedNotes ? JSON.parse(storedNotes) : []
+    notesInMemory.value = storedNotes ? JSON.parse(storedNotes) : []
   }
 
-  const saveNotes = (newNotes: Note[]) => {
-    notes.value = newNotes
-    localStorage.setItem("notes", JSON.stringify(newNotes))
+  const saveNotes = (notes: Note[]) => {
+    notesInMemory.value = notes
+    localStorage.setItem("notes", JSON.stringify(notes))
   }
 
   const getNoteById = (id: number) => {
-    return notes.value.find((note) => note.id === id) || null
+    return notesInMemory.value.find((note) => note.id === id) || null
   }
 
   const addNote = (newNote: Note) => {
-    notes.value.push(newNote)
-    saveNotes(notes.value)
+    notesInMemory.value.push(newNote)
+    saveNotes(notesInMemory.value)
   }
 
   const updateNote = (updatedNote: Note) => {
-    const existingNoteIndex = l.findIndex(notes.value, { id: updatedNote.id })
+    const existingNoteIndex = l.findIndex(notesInMemory.value, {
+      id: updatedNote.id,
+    })
     if (existingNoteIndex !== -1) {
-      notes.value[existingNoteIndex] = updatedNote
-      saveNotes(notes.value)
+      notesInMemory.value[existingNoteIndex] = updatedNote
+      saveNotes(notesInMemory.value)
     }
   }
 
   const deleteNoteById = (id: number) => {
-    notes.value = notes.value.filter((note) => note.id !== id)
-    saveNotes(notes.value)
+    notesInMemory.value = notesInMemory.value.filter((note) => note.id !== id)
+    saveNotes(notesInMemory.value)
   }
 
   return {
-    notes,
+    notes: notesInMemory,
     loadNotes,
     saveNotes,
     addNote,
