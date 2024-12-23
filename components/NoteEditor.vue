@@ -1,17 +1,43 @@
 <script setup lang="ts">
+import { onMounted } from "vue"
 import type { Note } from "../pages/index.vue"
 import l from "lodash"
 import ConfirmationDialog from "./ConfirmationDialog.vue"
+import { useNotes } from "@/composables/useNotes"
+import { getNextId } from "@/utils/getNextId"
+import { showSuccessToast, showErrorToast } from "@/utils/toasts"
 
 const props = defineProps<{
-  note: Note
+  noteId: string
 }>()
 
 const emit = defineEmits<{
   (e: "delete" | "cancel"): void
 }>()
 
-const state = ref(l.cloneDeep(props.note))
+const toast = useToast()
+
+const isNewNote = computed(() => props.noteId === "new")
+
+const initialNote = ref<Note | null>(null)
+
+const { loadNotes, addNote, getNoteById, updateNote, deleteNoteById } =
+  useNotes()
+
+loadNotes()
+
+watchEffect(() => {
+  if (isNewNote.value) {
+    return (initialNote.value = {
+      ...({} as Note),
+      todos: [],
+    })
+  } else {
+    initialNote.value = getNoteById(l.toNumber(props.noteId))
+  }
+})
+
+const noteClone = ref(l.cloneDeep(initialNote.value))
 
 const draftState = ref<Note | null>(null)
 
@@ -21,28 +47,37 @@ const showModalToDelete = ref(false)
 const showModalToCancel = ref(false)
 
 function resetToInitialState() {
-  draftState.value = l.cloneDeep(state.value)
-  state.value = l.cloneDeep(props.note)
+  draftState.value = l.cloneDeep(noteClone.value)
+  noteClone.value = l.cloneDeep(initialNote.value)
 }
 
 function removeTodo(todoId: number) {
-  state.value.todos = state.value.todos.filter((todo) => todo.id !== todoId)
-}
-
-function getNextTodoId() {
-  return state.value.todos.length
-    ? Math.max(...state.value.todos.map((todo) => todo.id)) + 1
-    : 1
+  if (!noteClone.value) return
+  noteClone.value.todos = noteClone.value.todos.filter(
+    (todo) => todo.id !== todoId
+  )
 }
 
 function addNewToDo() {
+  if (!noteClone.value) return
   if (newToDo.value) {
-    state.value.todos.push({
-      id: getNextTodoId(),
+    noteClone.value.todos.push({
+      id: getNextId(l.map(noteClone.value.todos, (todo) => todo.id)),
       text: newToDo.value,
       done: false,
     })
     newToDo.value = ""
+  }
+}
+
+function saveNote() {
+  if (!noteClone.value) return
+  if (isNewNote.value) {
+    addNote(noteClone.value)
+    showSuccessToast({ title: "Заметка создана" })
+  } else {
+    updateNote(noteClone.value)
+    showSuccessToast({ title: "Заметка сохранена" })
   }
 }
 
@@ -55,7 +90,10 @@ function confirmCancel() {
 }
 
 function deleteNote() {
-  emit("delete")
+  if (!noteClone.value || noteClone.value.id)
+    return showErrorToast({ title: "Ошибка удаления заметки" })
+  deleteNoteById(noteClone.value.id)
+  showSuccessToast({ title: "Заметка удалена" })
   showModalToDelete.value = false
 }
 
@@ -64,7 +102,9 @@ function cancelEditNote() {
   showModalToCancel.value = false
 }
 
-const isStateChanged = computed(() => !l.isEqual(state.value, props.note))
+const isStateChanged = computed(
+  () => !l.isEqual(noteClone.value, initialNote.value)
+)
 </script>
 
 <template>
@@ -72,13 +112,14 @@ const isStateChanged = computed(() => !l.isEqual(state.value, props.note))
     <div class="text-xl">Редактор заметки</div>
 
     <div>
-      <UForm :model="state">
+      {{ noteClone }}
+      <UForm v-if="noteClone" :model="noteClone">
         <div class="grid gap-5">
           <div class="grid grid-rows-auto">
             <div class="grid grid-cols-[1fr_auto] items-center gap-2">
               <UFormField name="title">
                 <UInput
-                  v-model="state.title"
+                  v-model="noteClone.title"
                   placeholder="Заголовок"
                   type="title"
                   size="xl"
@@ -90,20 +131,20 @@ const isStateChanged = computed(() => !l.isEqual(state.value, props.note))
                   icon="i-lucide-save"
                   variant="ghost"
                   color="neutral"
-                  @click="$emit('save')"
+                  @click="saveNote"
                 />
                 <UButton
                   icon="i-lucide-rotate-ccw"
                   variant="ghost"
                   color="neutral"
                   :disabled="!isStateChanged"
-                  @click="confirmCancel()"
+                  @click="confirmCancel"
                 />
                 <UButton
                   icon="i-lucide-trash"
                   variant="ghost"
                   color="neutral"
-                  @click="confirmDelete()"
+                  @click="confirmDelete"
                 />
               </div>
             </div>
@@ -122,19 +163,23 @@ const isStateChanged = computed(() => !l.isEqual(state.value, props.note))
                 color="neutral"
                 size="xs"
                 :disabled="!draftState"
-                @click="state = l.cloneDeep(draftState)"
+                @click="noteClone = l.cloneDeep(draftState)"
               />
             </div>
           </div>
 
           <div
             v-if="
-              !l.chain(state.todos).filter({ done: false }).isEmpty().value()
+              !l
+                .chain(noteClone.todos)
+                .filter({ done: false })
+                .isEmpty()
+                .value()
             "
             class="grid gap-2"
           >
             <div
-              v-for="todo in l.filter(state.todos, { done: false })"
+              v-for="todo in l.filter(noteClone.todos, { done: false })"
               :key="todo.id"
             >
               <UCard>
@@ -168,13 +213,13 @@ const isStateChanged = computed(() => !l.isEqual(state.value, props.note))
 
           <div
             v-if="
-              !l.chain(state.todos).filter({ done: true }).isEmpty().value()
+              !l.chain(noteClone.todos).filter({ done: true }).isEmpty().value()
             "
             class="grid gap-2"
           >
             <div class="text-sm">Выполнено:</div>
             <div
-              v-for="todo in l.filter(state.todos, { done: true })"
+              v-for="todo in l.filter(noteClone.todos, { done: true })"
               :key="todo.id"
             >
               <UCard>
