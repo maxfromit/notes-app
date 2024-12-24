@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import type { Note } from "../pages/index.vue"
+import type { Note } from "@/pages/index.vue"
 import l from "lodash"
 import { useNotes } from "@/composables/useNotes"
 import { showSuccessToast, showErrorToast } from "@/utils/toasts"
 
 const route = useRoute()
 const router = useRouter()
+
+const showModalToDelete = ref(false)
+const showModalToCancel = ref(false)
+const isGoodToGoNext = ref(false)
+const isStateChanged = ref(false)
+const nextPath = ref<string | null>(null)
 
 const { loadNotes, addNote, notes, getNoteById, updateNote, deleteNoteById } =
   useNotes()
@@ -40,18 +46,42 @@ function saveNote(note: Note) {
   }
 }
 
-function cancelEdit() {
+function showConfirmDeleteNote() {
+  showModalToDelete.value = true
+}
+
+function showConfirmIfNeededOrLeave() {
+  if (isStateChanged.value) return (showModalToCancel.value = true)
+  else return router.push("/")
+}
+
+function discardDialogAndApproveToGoToMain() {
+  showModalToCancel.value = false
+  isGoodToGoNext.value = true
+  router.push("/edit?id=new")
+}
+
+function discardDialogAndDeleteNoteAndGoToMain() {
+  showModalToDelete.value = false
+  if (!route.query.id || route.query.id === "new") {
+    return showErrorToast({ title: "Ошибка при удалении заметки" })
+  }
+  deleteNoteById(l.toNumber(route.query.id))
+  showSuccessToast({ title: "Заметка удалена" })
+  isGoodToGoNext.value = true
   router.push("/")
 }
 
-function deleteNote() {
-  if (!initialNote.value || !initialNote.value.id) {
-    return showErrorToast({ title: "Ошибка при удалении заметки" })
+onBeforeRouteLeave((to, from, next) => {
+  if (isStateChanged.value && !isGoodToGoNext.value) {
+    nextPath.value = to.fullPath
+    showModalToCancel.value = true
+    next(false)
+  } else {
+    isGoodToGoNext.value = false
+    next()
   }
-  deleteNoteById(initialNote.value.id)
-  showSuccessToast({ title: "Заметка удалена" })
-  router.push("/")
-}
+})
 </script>
 
 <template>
@@ -89,11 +119,28 @@ function deleteNote() {
     </div>
     <NoteEditor
       v-else-if="route?.query?.id && initialNote"
+      v-model:is-state-changed="isStateChanged"
       :note="initialNote"
       @save="saveNote"
-      @cancel="cancelEdit"
-      @delete="deleteNote"
+      @cancel="showConfirmIfNeededOrLeave"
+      @delete="showConfirmDeleteNote"
     />
     <div v-else class="text-center">Заметка не найдена</div>
+
+    <ConfirmationDialog
+      v-model:show-modal="showModalToDelete"
+      title="Удаление заметки"
+      description="Вы уверены?"
+      label-on-button="Удалить"
+      @confirm="discardDialogAndDeleteNoteAndGoToMain"
+    />
+
+    <ConfirmationDialog
+      v-model:show-modal="showModalToCancel"
+      title="Сброс редактирования"
+      description="Вы уверены, внесенные изменения будут потеряны?"
+      label-on-button="Сбросить"
+      @confirm="discardDialogAndApproveToGoToMain"
+    />
   </div>
 </template>
