@@ -11,26 +11,11 @@ const emit = defineEmits<{
   (e: "create"): void
 }>()
 
-const showModal = ref(false)
-const noteToDelete = ref<number | null>(null)
 const toDosToShow = 3
-
-function confirmDelete(noteId: number) {
-  noteToDelete.value = noteId
-  showModal.value = true
-}
-
-function deleteNote() {
-  if (noteToDelete.value !== null) {
-    emit("delete", noteToDelete.value)
-    noteToDelete.value = null
-    showModal.value = false
-  }
-}
 </script>
 
 <template>
-  <div class="grid grid-rows-[auto_1fr] gap-4">
+  <div class="grid grid-rows-[auto_1fr] gap-2">
     <div class="flex flex-row gap-2 justify-center">
       <div class="text-xl">Заметки</div>
       <UButton
@@ -45,8 +30,8 @@ function deleteNote() {
     <div v-for="note in props.notes" :key="note.id">
       <UCard>
         <div class="grid grid-cols-[1fr_auto]">
-          <div>{{ note.title }}</div>
-          <div class="grid grid-cols-2 gap-1">
+          <div class="font-medium">{{ note.title }}</div>
+          <div class="grid grid-cols-[auto_auto] gap-1 items-start">
             <UTooltip text="Редактировать заметку">
               <UButton
                 icon="i-lucide-pencil"
@@ -61,12 +46,12 @@ function deleteNote() {
                 icon="i-lucide-trash"
                 variant="ghost"
                 color="neutral"
-                @click="confirmDelete(note.id)"
+                @click="emit('delete', note.id)"
               />
             </UTooltip>
           </div>
         </div>
-        <div class="text-sm">
+        <div class="text-sm mt-1">
           <div
             v-for="todo in note.todos.slice(0, toDosToShow)"
             :key="todo.id"
@@ -85,12 +70,4 @@ function deleteNote() {
   <div v-else key="notes-empty" class="text-center">
     Заметок нет, нажмите +, чтобы создать новую
   </div>
-
-  <ConfirmationDialog
-    v-model:show-modal="showModal"
-    title="Удаление заметки"
-    label-on-button="Удалить"
-    description="Вы уверены?"
-    @confirm="deleteNote"
-  />
 </template>
