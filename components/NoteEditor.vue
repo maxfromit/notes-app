@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from "vue"
-import type { Note } from "../pages/index.vue"
+import type { Note } from "@/pages/index.vue"
 import l from "lodash"
-import ConfirmationDialog from "./ConfirmationDialog.vue"
 import { getNextId } from "@/utils/getNextId"
 
 const props = defineProps<{
@@ -14,12 +12,13 @@ const emit = defineEmits<{
   (e: "save", note: Note): void
 }>()
 
+const isStateChangedForEmit = defineModel<boolean>("isStateChanged", {
+  default: false,
+})
+
 const noteClone = ref(l.cloneDeep(props.note))
 const draftState = ref<Note | null>(null)
 const newToDo = ref("")
-
-const showModalToDelete = ref(false)
-const showModalToCancel = ref(false)
 
 watchEffect(() => {
   noteClone.value = l.cloneDeep(props.note)
@@ -55,30 +54,13 @@ function addNewToDo() {
   }
 }
 
-function saveNote() {
-  if (!noteClone.value) return
-  emit("save", noteClone.value)
-}
-
-function confirmDelete() {
-  showModalToDelete.value = true
-}
-
-function confirmCancel() {
-  showModalToCancel.value = true
-}
-
-function deleteNote() {
-  emit("delete")
-  showModalToDelete.value = false
-}
-
-function cancelEditNote() {
-  emit("cancel")
-  showModalToCancel.value = false
-}
-
 const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
+
+watch(
+  () => isStateChanged.value,
+  () => (isStateChangedForEmit.value = isStateChanged.value),
+  { immediate: true }
+)
 </script>
 
 <template>
@@ -109,14 +91,14 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
                   variant="ghost"
                   color="neutral"
                   :disabled="!isStateChanged || !noteClone.title.trim()"
-                  @click="saveNote"
+                  @click="emit('save', noteClone)"
                 />
               </UTooltip>
 
               <UTooltip
                 :text="
                   !isStateChanged
-                    ? 'Нельзя отменить: нет изменений'
+                    ? 'Вернуться на главную'
                     : 'Отменить и вернуться на главную'
                 "
               >
@@ -124,8 +106,7 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
                   icon="i-lucide-rotate-ccw"
                   variant="ghost"
                   color="neutral"
-                  :disabled="!isStateChanged"
-                  @click="confirmCancel"
+                  @click="emit('cancel')"
                 />
               </UTooltip>
 
@@ -141,7 +122,7 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
                   variant="ghost"
                   color="neutral"
                   :disabled="!noteClone.id"
-                  @click="confirmDelete"
+                  @click="emit('delete')"
                 />
               </UTooltip>
             </div>
@@ -274,20 +255,5 @@ const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
         />
       </div>
     </UCard>
-    <ConfirmationDialog
-      v-model:show-modal="showModalToDelete"
-      title="Удаление заметки"
-      description="Вы уверены?"
-      label-on-button="Удалить"
-      @confirm="deleteNote"
-    />
-
-    <ConfirmationDialog
-      v-model:show-modal="showModalToCancel"
-      title="Сброс редактирования"
-      description="Вы уверены, внесенные изменения будут потеряны?"
-      label-on-button="Сбросить"
-      @confirm="cancelEditNote"
-    />
   </div>
 </template>
