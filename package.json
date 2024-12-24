@@ -1,5 +1,5 @@
 {
-  "name": "local-storage-todo",
+  "name": "notes-app",
   "private": true,
   "type": "module",
   "scripts": {
