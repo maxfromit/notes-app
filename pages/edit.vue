@@ -11,7 +11,6 @@ const showModalToDelete = ref(false)
 const showModalToCancel = ref(false)
 const isGoodToGoNext = ref(false)
 const isStateChanged = ref(false)
-const nextPath = ref<string | null>(null)
 
 const { loadNotes, addNote, notes, getNoteById, updateNote, deleteNoteById } =
   useNotes()
@@ -58,7 +57,7 @@ function showConfirmIfNeededOrLeave() {
 function discardDialogAndApproveToGoToMain() {
   showModalToCancel.value = false
   isGoodToGoNext.value = true
-  router.push("/edit?id=new")
+  router.push("/")
 }
 
 function discardDialogAndDeleteNoteAndGoToMain() {
@@ -74,7 +73,6 @@ function discardDialogAndDeleteNoteAndGoToMain() {
 
 onBeforeRouteLeave((to, from, next) => {
   if (isStateChanged.value && !isGoodToGoNext.value) {
-    nextPath.value = to.fullPath
     showModalToCancel.value = true
     next(false)
   } else {
