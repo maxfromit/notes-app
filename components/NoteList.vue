@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Note } from "../pages/index.vue"
+import type { Note } from "@/pages/index.vue"
 import l from "lodash"
 
 const props = defineProps<{
