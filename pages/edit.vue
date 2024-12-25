@@ -115,14 +115,16 @@ onBeforeRouteLeave((to, from, next) => {
         </div>
       </UCard>
     </div>
+
     <NoteEditor
-      v-else-if="route?.query?.id && initialNote"
+      v-if="route?.query?.id && initialNote"
       v-model:is-state-changed="isStateChanged"
       :note="initialNote"
       @save="saveNote"
       @cancel="showConfirmIfNeededOrLeave"
       @delete="showConfirmDeleteNote"
     />
+
     <div v-else class="text-center">Заметка не найдена</div>
 
     <ConfirmationDialog
