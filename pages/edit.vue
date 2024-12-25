@@ -117,7 +117,7 @@ onBeforeRouteLeave((to, from, next) => {
     </div>
 
     <NoteEditor
-      v-if="route?.query?.id && initialNote"
+      v-if="!loading && route?.query?.id && initialNote"
       v-model:is-state-changed="isStateChanged"
       :note="initialNote"
       @save="saveNote"
@@ -125,7 +125,12 @@ onBeforeRouteLeave((to, from, next) => {
       @delete="showConfirmDeleteNote"
     />
 
-    <div v-else class="text-center">Заметка не найдена</div>
+    <div
+      v-if="!loading && (!route?.query?.id || !initialNote)"
+      class="text-center"
+    >
+      Заметка не найдена
+    </div>
 
     <ConfirmationDialog
       v-model:show-modal="showModalToDelete"
