@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Note } from "@/pages/index.vue"
 import l from "lodash"
-import { useNotes } from "@/composables/useNotes"
+import { useNotesStore } from "@/stores/notes"
 import { showSuccessToast, showErrorToast } from "@/utils/toasts"
 
 const route = useRoute()
@@ -12,33 +12,28 @@ const showModalToCancel = ref(false)
 const isGoodToGoNext = ref(false)
 const isStateChanged = ref(false)
 
-const { addNote, notes, getNoteById, updateNote, deleteNoteById } = useNotes()
+const notesStore = useNotesStore()
 
 const isNewNote = computed(() => route.query.id === "new")
 const initialNote = ref<Note | null>(null)
-const loading = ref(true)
-
-onMounted(() => {
-  loading.value = false
-})
 
 watchEffect(() => {
   if (isNewNote.value) {
     initialNote.value = { ...({} as Note), todos: [] }
   } else {
-    initialNote.value = getNoteById(l.toNumber(route.query.id))
+    initialNote.value = notesStore.getNoteById(l.toNumber(route.query.id))
   }
 })
 
 function saveNote(note: Note) {
   if (!note) return
   if (isNewNote.value) {
-    note.id = getNextId(l.map(notes.value, (note) => note.id))
-    addNote(note)
+    note.id = getNextId(l.map(notesStore.notes, (note) => note.id))
+    notesStore.addNote(note)
     showSuccessToast({ title: "Заметка создана" })
     router.push(`/edit?id=${note.id}`)
   } else {
-    updateNote(note)
+    notesStore.updateNote(note)
     showSuccessToast({ title: "Заметка сохранена" })
   }
 }
@@ -63,7 +58,7 @@ function discardDialogAndDeleteNoteAndGoToMain() {
   if (!route.query.id || route.query.id === "new") {
     return showErrorToast({ title: "Ошибка при удалении заметки" })
   }
-  deleteNoteById(l.toNumber(route.query.id))
+  notesStore.deleteNoteById(l.toNumber(route.query.id))
   showSuccessToast({ title: "Заметка удалена" })
   isGoodToGoNext.value = true
   router.push("/")
@@ -82,40 +77,8 @@ onBeforeRouteLeave((to, from, next) => {
 
 <template>
   <div class="h-full">
-    <div v-if="loading" class="grid grid-rows-[auto_1fr_auto] gap-5 h-full">
-      <div class="text-xl">
-        <USkeleton class="h-6 w-32" />
-      </div>
-      <div>
-        <UCard>
-          <div class="grid grid-cols-[1fr_auto] items-center gap-2">
-            <USkeleton class="h-6 w-full" />
-            <div class="grid grid-cols-3 gap-2">
-              <USkeleton class="h-6 w-6" />
-              <USkeleton class="h-6 w-6" />
-              <USkeleton class="h-6 w-6" />
-            </div>
-          </div>
-          <div class="grid gap-2 mt-5">
-            <UCard v-for="n in 3" :key="n">
-              <div class="grid grid-cols-[auto_1fr] items-center gap-2">
-                <USkeleton class="h-6 w-6" />
-                <USkeleton class="h-6 w-full" />
-              </div>
-            </UCard>
-          </div>
-        </UCard>
-      </div>
-      <UCard>
-        <div class="grid grid-cols-[auto_1fr] gap-2 items-center">
-          <USkeleton class="h-6 w-6" />
-          <USkeleton class="h-6 w-full" />
-        </div>
-      </UCard>
-    </div>
-
     <NoteEditor
-      v-if="!loading && route?.query?.id && initialNote"
+      v-if="route?.query?.id && initialNote"
       v-model:is-state-changed="isStateChanged"
       :note="initialNote"
       @save="saveNote"
@@ -123,10 +86,7 @@ onBeforeRouteLeave((to, from, next) => {
       @delete="showConfirmDeleteNote"
     />
 
-    <div
-      v-if="!loading && (!route?.query?.id || !initialNote)"
-      class="text-center"
-    >
+    <div v-if="!route?.query?.id || !initialNote" class="text-center">
       Заметка не найдена
     </div>
 
