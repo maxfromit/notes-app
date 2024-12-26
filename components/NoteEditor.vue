@@ -252,6 +252,7 @@ watch(
           type="text"
           size="sm"
           variant="ghost"
+          @keyup.enter="addNewToDo"
         />
       </div>
     </UCard>
