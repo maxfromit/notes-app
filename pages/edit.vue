@@ -12,15 +12,13 @@ const showModalToCancel = ref(false)
 const isGoodToGoNext = ref(false)
 const isStateChanged = ref(false)
 
-const { loadNotes, addNote, notes, getNoteById, updateNote, deleteNoteById } =
-  useNotes()
+const { addNote, notes, getNoteById, updateNote, deleteNoteById } = useNotes()
 
 const isNewNote = computed(() => route.query.id === "new")
 const initialNote = ref<Note | null>(null)
 const loading = ref(true)
 
 onMounted(() => {
-  loadNotes()
   loading.value = false
 })
 

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue"
 import { useRouter } from "vue-router"
 import NoteList from "@/components/NoteList.vue"
 import l from "lodash"
@@ -11,14 +10,13 @@ export type Note = {
   todos: { id: number; text: string; done: boolean }[]
 }
 
-const { notes, loadNotes, deleteNoteById } = useNotes()
+const { notes, deleteNoteById } = useNotes()
 
 const loading = ref(true)
 const showModal = ref(false)
 const noteIdToDelete = ref<number | null>(null)
 
 onMounted(() => {
-  loadNotes()
   loading.value = false
 })
 
