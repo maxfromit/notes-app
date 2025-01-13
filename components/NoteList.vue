@@ -17,7 +17,7 @@ const toDosToShow = 3
 <template>
   <div class="grid grid-rows-[auto_1fr] gap-2">
     <div class="flex flex-row gap-2 justify-center">
-      <div class="text-xl">Notes</div>
+      <div class="text-xl">To-Do Lists</div>
       <UButton
         icon="i-lucide-plus"
         variant="ghost"

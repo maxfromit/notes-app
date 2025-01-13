@@ -97,7 +97,7 @@ watch(
 
 <template>
   <div class="grid grid-rows-[auto_1fr_auto] gap-4 h-full">
-    <div class="text-xl text-center">Note Editor</div>
+    <div class="text-xl text-center">To-Do List Editor</div>
     <div>
       <div v-if="noteClone" class="grid gap-5">
         <div class="grid grid-rows-auto">
