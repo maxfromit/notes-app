@@ -9,4 +9,9 @@ export default defineNuxtConfig({
     "pinia-plugin-persistedstate/nuxt",
   ],
   css: ["~/assets/css/main.css"],
+  app: {
+    head: {
+      title: "My To-Do App",
+    },
+  },
 })
