@@ -28,11 +28,11 @@ const sortedNotes = computed(() =>
 
 const router = useRouter()
 
-function createNote() {
+function goToCreateNote() {
   router.push("/edit?id=new")
 }
 
-function editNote(noteId: number) {
+function goToEditNote(noteId: number) {
   router.push(`/edit?id=${noteId}`)
 }
 
@@ -54,9 +54,9 @@ function deleteNote() {
   <div class="h-full">
     <NoteList
       :notes="sortedNotes"
-      @edit="editNote"
+      @edit="goToEditNote"
       @delete="showConfirmDeleteNote"
-      @create="createNote"
+      @create="goToCreateNote"
     />
     <ConfirmationDialog
       v-model:show-modal="showModal"
