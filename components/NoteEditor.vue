@@ -2,6 +2,7 @@
 import type { Note } from "@/pages/index.vue"
 import l from "lodash"
 import { getNextId } from "@/utils/getNextId"
+import { useRefHistory } from "@vueuse/core"
 
 const props = defineProps<{
   note: Note | null
@@ -17,22 +18,38 @@ const isStateChangedForEmit = defineModel<boolean>("isStateChanged", {
 })
 
 const noteClone = ref(l.cloneDeep(props.note))
-const draftState = ref<Note | null>(null)
+const noteTitle = ref(props?.note?.title)
+
+const refHistory = useRefHistory(noteClone, { clone: l.cloneDeep, deep: true })
+
+// const { history, undo, redo } = useRefHistory(noteClone, {
+//   deep: true,
+// })
+
+watch(
+  () => refHistory?.source?.value,
+  () => {
+    noteTitle.value = refHistory.source.value?.title
+  },
+  { deep: true, immediate: true }
+)
+
+// const draftState = ref<Note | null>(null)
 const newToDo = ref("")
 
-watchEffect(() => {
-  noteClone.value = l.cloneDeep(props.note)
-})
+// watchEffect(() => {
+//   noteClone.value = l.cloneDeep(props.note)
+// })
 
-function resetToInitialState() {
-  draftState.value = l.cloneDeep(noteClone.value)
-  noteClone.value = l.cloneDeep(props.note)
-}
+// function resetToInitialState() {
+//   draftState.value = l.cloneDeep(noteClone.value)
+//   noteClone.value = l.cloneDeep(props.note)
+// }
 
-function returnToNewState() {
-  noteClone.value = l.cloneDeep(draftState.value)
-  draftState.value = null
-}
+// function returnToNewState() {
+//   noteClone.value = l.cloneDeep(draftState.value)
+//   draftState.value = null
+// }
 
 function removeTodo(todoId: number) {
   if (!noteClone.value) return
@@ -41,6 +58,18 @@ function removeTodo(todoId: number) {
   )
 }
 
+function save() {
+  if (!refHistory?.source?.value) return
+  return emit("save", refHistory?.source?.value)
+}
+
+function addTitleWithDelay() {
+  setTimeout(() => {
+    if (refHistory.source.value) {
+      refHistory.source.value.title = noteTitle.value
+    }
+  }, 1000)
+}
 function addNewToDo() {
   if (!noteClone.value) return
 
@@ -50,15 +79,18 @@ function addNewToDo() {
       text: newToDo.value,
       done: false,
     })
+
     newToDo.value = ""
   }
 }
 
-const isStateChanged = computed(() => !l.isEqual(noteClone.value, props.note))
+const isChanged = computed(
+  () => !l.isEqual(props.note, refHistory.source.value)
+)
 
 watch(
-  () => isStateChanged.value,
-  () => (isStateChangedForEmit.value = isStateChanged.value),
+  () => isChanged.value,
+  () => (isStateChangedForEmit.value = isChanged.value),
   { immediate: true }
 )
 </script>
@@ -66,32 +98,30 @@ watch(
 <template>
   <div class="grid grid-rows-[auto_1fr_auto] gap-4 h-full">
     <div class="text-xl text-center">Редактор заметки</div>
-
     <div>
       <div v-if="noteClone" class="grid gap-5">
         <div class="grid grid-rows-auto">
           <div class="grid grid-cols-[1fr_auto] items-center gap-2">
             <UInput
-              v-model="noteClone.title"
+              v-model="noteTitle"
               placeholder="Заголовок"
               type="title"
               size="xl"
               variant="ghost"
+              @update:model-value="addTitleWithDelay"
             />
             <div>
               <UTooltip
                 :text="
-                  !isStateChanged
-                    ? 'Нельзя сохранить: нет изменений'
-                    : 'Сохранить'
+                  !isChanged ? 'Нельзя сохранить: нет изменений' : 'Сохранить'
                 "
               >
                 <UButton
                   icon="i-lucide-save"
                   variant="ghost"
                   color="neutral"
-                  :disabled="!isStateChanged || !noteClone.title.trim()"
-                  @click="emit('save', noteClone)"
+                  :disabled="!isChanged"
+                  @click="save()"
                 />
               </UTooltip>
 
@@ -130,7 +160,7 @@ watch(
           <div class="flex flex-row items-center gap-1 pl-3">
             <UTooltip
               :text="
-                !isStateChanged
+                !refHistory?.canUndo.value
                   ? 'Нельзя отменить изменения: изменений нет'
                   : 'Отменить все изменения и вернуться к изначальному состоянию'
               "
@@ -140,25 +170,41 @@ watch(
                 variant="ghost"
                 color="neutral"
                 size="xs"
+                :disabled="!refHistory?.canUndo.value"
+                @click="refHistory.undo()"
+              />
+              <!-- <UButton
+                icon="i-lucide-undo"
+                variant="ghost"
+                color="neutral"
+                size="xs"
                 :disabled="!isStateChanged"
                 @click="resetToInitialState"
-              />
+              /> -->
             </UTooltip>
 
             <UTooltip
               :text="
-                !draftState
+                !refHistory?.canRedo.value
                   ? 'Нельзя вернуть изменения: заметка в изначальном состоянии'
                   : 'Вернуть все изменения'
               "
             >
-              <UButton
+              <!-- <UButton
                 icon="i-lucide-redo"
                 variant="ghost"
                 color="neutral"
                 size="xs"
                 :disabled="!draftState"
                 @click="returnToNewState"
+              /> -->
+              <UButton
+                icon="i-lucide-redo"
+                variant="ghost"
+                color="neutral"
+                size="xs"
+                :disabled="!refHistory?.canRedo.value"
+                @click="refHistory.redo()"
               />
             </UTooltip>
           </div>
@@ -166,12 +212,18 @@ watch(
 
         <div
           v-if="
-            !l.chain(noteClone.todos).filter({ done: false }).isEmpty().value()
+            !l
+              .chain(refHistory.source.value.todos)
+              .filter({ done: false })
+              .isEmpty()
+              .value()
           "
           class="grid gap-2"
         >
           <div
-            v-for="todo in l.filter(noteClone.todos, { done: false })"
+            v-for="todo in l.filter(refHistory.source.value.todos, {
+              done: false,
+            })"
             :key="todo.id"
           >
             <UCard>
@@ -201,13 +253,19 @@ watch(
 
         <div
           v-if="
-            !l.chain(noteClone.todos).filter({ done: true }).isEmpty().value()
+            !l
+              .chain(refHistory.source.value.todos)
+              .filter({ done: true })
+              .isEmpty()
+              .value()
           "
           class="grid gap-2"
         >
           <div class="text-sm">Выполнено:</div>
           <div
-            v-for="todo in l.filter(noteClone.todos, { done: true })"
+            v-for="todo in l.filter(refHistory.source.value.todos, {
+              done: true,
+            })"
             :key="todo.id"
           >
             <UCard>
