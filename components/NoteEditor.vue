@@ -37,20 +37,6 @@ watch(
 // const draftState = ref<Note | null>(null)
 const newToDo = ref("")
 
-// watchEffect(() => {
-//   noteClone.value = l.cloneDeep(props.note)
-// })
-
-// function resetToInitialState() {
-//   draftState.value = l.cloneDeep(noteClone.value)
-//   noteClone.value = l.cloneDeep(props.note)
-// }
-
-// function returnToNewState() {
-//   noteClone.value = l.cloneDeep(draftState.value)
-//   draftState.value = null
-// }
-
 function removeTodo(todoId: number) {
   if (!noteClone.value) return
   noteClone.value.todos = noteClone.value.todos.filter(
@@ -68,7 +54,7 @@ function addTitleWithDelay() {
     if (refHistory.source.value) {
       refHistory.source.value.title = noteTitle.value
     }
-  }, 1000)
+  }, 2000)
 }
 function addNewToDo() {
   if (!noteClone.value) return
