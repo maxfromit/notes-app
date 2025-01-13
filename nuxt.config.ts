@@ -11,7 +11,7 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   app: {
     head: {
-      title: "My Note App",
+      title: "My To-Dos",
     },
   },
 })
