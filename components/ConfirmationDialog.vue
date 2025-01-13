@@ -25,7 +25,7 @@ const emit = defineEmits<{
   >
     <template #footer>
       <UButton
-        label="Отмена"
+        label="Cancel"
         color="neutral"
         variant="outline"
         @click="showModal = false"

@@ -17,7 +17,7 @@ const toDosToShow = 3
 <template>
   <div class="grid grid-rows-[auto_1fr] gap-2">
     <div class="flex flex-row gap-2 justify-center">
-      <div class="text-xl">Заметки</div>
+      <div class="text-xl">Notes</div>
       <UButton
         icon="i-lucide-plus"
         variant="ghost"
@@ -32,7 +32,7 @@ const toDosToShow = 3
         <div class="grid grid-cols-[1fr_auto]">
           <div class="font-medium">{{ note.title }}</div>
           <div class="grid grid-cols-[auto_auto] gap-1 items-start">
-            <UTooltip text="Редактировать заметку">
+            <UTooltip text="Edit Note">
               <UButton
                 icon="i-lucide-pencil"
                 variant="ghost"
@@ -41,7 +41,7 @@ const toDosToShow = 3
               />
             </UTooltip>
 
-            <UTooltip text="Удалить заметку">
+            <UTooltip text="Delete Note">
               <UButton
                 icon="i-lucide-trash"
                 variant="ghost"
@@ -60,7 +60,7 @@ const toDosToShow = 3
             {{ todo.text }}
           </div>
           <div v-if="l.size(note.todos) > toDosToShow">
-            ...еще {{ l.size(note.todos) - toDosToShow }}
+            ...more {{ l.size(note.todos) - toDosToShow }}
           </div>
         </div>
       </UCard>
@@ -68,6 +68,6 @@ const toDosToShow = 3
   </div>
 
   <div v-else key="notes-empty" class="text-center">
-    Заметок нет, нажмите +, чтобы создать новую
+    No notes, click + to create a new one
   </div>
 </template>

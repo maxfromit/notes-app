@@ -46,7 +46,7 @@ function deleteNote() {
   notesStore.deleteNoteById(noteIdToDelete.value)
   showModal.value = false
   noteIdToDelete.value = null
-  showSuccessToast({ title: "Заметка удалена" })
+  showSuccessToast({ title: "Note deleted" })
 }
 </script>
 
@@ -60,9 +60,9 @@ function deleteNote() {
     />
     <ConfirmationDialog
       v-model:show-modal="showModal"
-      title="Удаление заметки"
-      label-on-button="Удалить"
-      description="Вы уверены?"
+      title="Delete Note"
+      label-on-button="Delete"
+      description="Are you sure?"
       @confirm="deleteNote"
     />
   </div>

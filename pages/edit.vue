@@ -30,11 +30,11 @@ function saveNote(note: Note) {
   if (isNewNote.value) {
     note.id = getNextId(l.map(notesStore.notes, (note) => note.id))
     notesStore.addNote(note)
-    showSuccessToast({ title: "Заметка создана" })
+    showSuccessToast({ title: "Note created" })
     router.push(`/edit?id=${note.id}`)
   } else {
     notesStore.updateNote(note)
-    showSuccessToast({ title: "Заметка сохранена" })
+    showSuccessToast({ title: "Note saved" })
   }
 }
 
@@ -56,10 +56,10 @@ function discardDialogAndApproveToGoToMain() {
 function discardDialogAndDeleteNoteAndGoToMain() {
   showModalToDelete.value = false
   if (!route.query.id || route.query.id === "new") {
-    return showErrorToast({ title: "Ошибка при удалении заметки" })
+    return showErrorToast({ title: "Error deleting note" })
   }
   notesStore.deleteNoteById(l.toNumber(route.query.id))
-  showSuccessToast({ title: "Заметка удалена" })
+  showSuccessToast({ title: "Note deleted" })
   isGoodToGoNext.value = true
   router.push("/")
 }
@@ -87,22 +87,22 @@ onBeforeRouteLeave((to, from, next) => {
     />
 
     <div v-if="!route?.query?.id || !initialNote" class="text-center">
-      Заметка не найдена
+      Note not found
     </div>
 
     <ConfirmationDialog
       v-model:show-modal="showModalToDelete"
-      title="Удаление заметки"
-      description="Вы уверены?"
-      label-on-button="Удалить"
+      title="Delete Note"
+      description="Are you sure?"
+      label-on-button="Delete"
       @confirm="discardDialogAndDeleteNoteAndGoToMain"
     />
 
     <ConfirmationDialog
       v-model:show-modal="showModalToCancel"
-      title="Сброс редактирования"
-      description="Вы уверены, внесенные изменения будут потеряны?"
-      label-on-button="Сбросить"
+      title="Discard Changes"
+      description="Are you sure? Unsaved changes will be lost."
+      label-on-button="Discard"
       @confirm="discardDialogAndApproveToGoToMain"
     />
   </div>

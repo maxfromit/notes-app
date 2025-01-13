@@ -14,6 +14,6 @@ function goBack() {
     <div v-if="route.path !== '/'">
       <UButton icon="i-lucide-arrow-left" variant="ghost" @click="goBack" />
     </div>
-    <ULink class="text-center text-3xl col-start-2" to="/">Ваши заметки</ULink>
+    <ULink class="text-center text-3xl col-start-2" to="/">Your Notes</ULink>
   </div>
 </template>

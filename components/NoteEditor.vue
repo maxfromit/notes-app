@@ -97,25 +97,21 @@ watch(
 
 <template>
   <div class="grid grid-rows-[auto_1fr_auto] gap-4 h-full">
-    <div class="text-xl text-center">Редактор заметки</div>
+    <div class="text-xl text-center">Note Editor</div>
     <div>
       <div v-if="noteClone" class="grid gap-5">
         <div class="grid grid-rows-auto">
           <div class="grid grid-cols-[1fr_auto] items-center gap-2">
             <UInput
               v-model="noteTitle"
-              placeholder="Заголовок"
+              placeholder="Title"
               type="title"
               size="xl"
               variant="ghost"
               @update:model-value="addTitleWithDelay"
             />
             <div>
-              <UTooltip
-                :text="
-                  !isChanged ? 'Нельзя сохранить: нет изменений' : 'Сохранить'
-                "
-              >
+              <UTooltip :text="!isChanged ? 'Cannot save: no changes' : 'Save'">
                 <UButton
                   icon="i-lucide-save"
                   variant="ghost"
@@ -127,9 +123,7 @@ watch(
 
               <UTooltip
                 :text="
-                  !isStateChanged
-                    ? 'Вернуться на главную'
-                    : 'Отменить и вернуться на главную'
+                  !isChanged ? 'Go back to main' : 'Cancel and go back to main'
                 "
               >
                 <UButton
@@ -143,8 +137,8 @@ watch(
               <UTooltip
                 :text="
                   !noteClone.id
-                    ? 'Нельзя удалить: заметка не создана'
-                    : 'Удалить заметку и вернуться на главную'
+                    ? 'Cannot delete: note not created'
+                    : 'Delete note and go back to main'
                 "
               >
                 <UButton
@@ -161,8 +155,8 @@ watch(
             <UTooltip
               :text="
                 !refHistory?.canUndo.value
-                  ? 'Нельзя отменить изменения: изменений нет'
-                  : 'Отменить все изменения и вернуться к изначальному состоянию'
+                  ? 'Cannot undo changes: no changes'
+                  : 'Undo all changes and return to initial state'
               "
             >
               <UButton
@@ -186,18 +180,10 @@ watch(
             <UTooltip
               :text="
                 !refHistory?.canRedo.value
-                  ? 'Нельзя вернуть изменения: заметка в изначальном состоянии'
-                  : 'Вернуть все изменения'
+                  ? 'Cannot redo changes: note in initial state'
+                  : 'Redo all changes'
               "
             >
-              <!-- <UButton
-                icon="i-lucide-redo"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                :disabled="!draftState"
-                @click="returnToNewState"
-              /> -->
               <UButton
                 icon="i-lucide-redo"
                 variant="ghost"
@@ -261,7 +247,7 @@ watch(
           "
           class="grid gap-2"
         >
-          <div class="text-sm">Выполнено:</div>
+          <div class="text-sm">Completed:</div>
           <div
             v-for="todo in l.filter(refHistory.source.value.todos, {
               done: true,
@@ -306,7 +292,7 @@ watch(
         />
         <UInput
           v-model="newToDo"
-          placeholder="Добавить задачу"
+          placeholder="Add a task"
           type="text"
           size="sm"
           variant="ghost"
